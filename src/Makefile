@@ -56,4 +56,4 @@ disasm:    main.elf
 	avr-objdump -d main.elf
 
 cpp:
-	$(COMPILE) -E main.c%   
+	$(COMPILE) -E main.c%
