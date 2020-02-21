@@ -1,6 +1,6 @@
 #include<avr/io.h>
 #include<util/delay.h>
-#include"lcd_macros.h"
+#include<avr/interrupt.h>
 
 #define F_CPU 16000000UL
 #define LCD_RS PB0
@@ -94,15 +94,33 @@ void lcd_string(char *string) {
 
 void init_i2c(uint8_t addr){
     TWAR = addr << 1 ;//load address
-
-    TWCR = (1 << TWEA) | (1 << TWEN);
+    TWCR = (1 << TWEA) | (1 << TWEN) | (1 << TWINT); //Settingup the Control register 
+    sei();
 }
 
+/*
+ISR(TW_Vect){
+    switch((TWSR & 0xF8)){
+        case TW_SR_SLA_ACK: // Slave has been acknowledged
+        
+
+        case TW_SR_DATA_ACK: // Data has been recieved by the slave
+
+
+        case TW_ST_DATA_ACK: // Data has been requested
+
+        default:
+        
+    }
+}
+*/
 int main(){
-    init_lcd();
-    init_i2c(0x0A);
+    DDRB = 0xff;
+    PORTB |= (1 << PB0);
     return 0;
 }
+
+
 
 
 
