@@ -45,6 +45,7 @@
 #define LCD_5x10DOTS 0x04
 #define LCD_5x8DOTS 0x00
 
+uint8_t data;
 
 
 void send_command(uint8_t data){ // command deko
@@ -93,27 +94,28 @@ void lcd_string(char *string) {
 }
 
 void init_i2c(uint8_t addr){
-    TWAR = addr << 1 ;//load address
-    TWCR = (1 << TWEA) | (1 << TWEN) | (1 << TWINT); //Settingup the Control register 
+    TWAR = addr << 1 ;// Loadd address into TWAR
+    TWCR = (1 << TWEA) | (1 << TWEN) | (1 << TWINT); // Setting up the Control register 
     sei();
 }
 
-/*
+
 ISR(TW_Vect){
     switch((TWSR & 0xF8)){
         case TW_SR_SLA_ACK: // Slave has been acknowledged
-        
+
+            TWCR |= (1<<TWINT) | (1<<TWEN) | (1 << TWEA);
 
         case TW_SR_DATA_ACK: // Data has been recieved by the slave
-
-
+            data = TWDR;
+            
         case TW_ST_DATA_ACK: // Data has been requested
 
         default:
         
     }
 }
-*/
+
 int main(){
     DDRB = 0xff;
     PORTB |= (1 << PB0);
