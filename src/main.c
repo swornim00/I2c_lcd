@@ -1,10 +1,14 @@
 #include<avr/io.h>
+#define F_CPU 16000000UL      // Define CPU Frequency here it 16MHz 
+
 #include<util/delay.h>
 #include<avr/interrupt.h>
 
-#define F_CPU 16000000UL
 #define LCD_RS PB0
 #define LCD_EN PB1
+
+#define DATA_DIR DDRD
+#define CONTROL_DIR DDRB
 #define DATA_PORT PORTD
 #define CONTROL_PORT PORTB
 
@@ -45,60 +49,63 @@
 #define LCD_5x10DOTS 0x04
 #define LCD_5x8DOTS 0x00
 
-uint8_t data;
-
-
 void send_command(uint8_t data){ // command deko
-    DDRB = 0xFF;
-    DDRD = 0XFF;
+    CONTROL_PORT &= ~(1 << LCD_RS); // RS pin high
+    send_4bit(data);
+    send_4bit(data << 4);
 
-    PORTD = data ; // giving data
-    CONTROL_PORT &= ~(1 << LCD_RS); // RS pin low
-
-    // Giving a pulse
-    PORTB |= (1 << LCD_EN); // Enable pin high
-    _delay_us(1);
-    PORTB &= ~(1 << LCD_EN); // Enable pin low
-    _delay_ms(3);
 }
 
-void send_8bit(char data){ // print gareko
-    PORTD = data ; // giving data
+void send_data(uint8_t data){
     CONTROL_PORT |= (1 << LCD_RS); // RS pin high
+    send_4bit(data);
+    send_4bit(data << 4);
+}
 
+void send_4bit(char data){ // print gareko
+    DATA_PORT = (DATA_PORT & 0x0F) | (data & 0xF0); // giving data
     // Giving a pulse
-    PORTB &= ~(1 << LCD_EN); // Enable pin low
-    _delay_us(1);
-    PORTB |= (1 << LCD_EN); // Enable pin high
-    _delay_us(1);
-    PORTB &= ~(1 << LCD_EN); // Enable pin low
-    _delay_ms(0.3);
+
+    CONTROL_PORT |= (1 << LCD_EN); // Enable pin high
+	_delay_us(50);
+    CONTROL_PORT &= ~(1 << LCD_EN); // Enable pin low
+	_delay_us(200);
 
 }
 
 void init_lcd(){  
-    CONTROL_PORT = (1 << LCD_RS) | (1 << LCD_EN);
-    DATA_PORT = 0XFF;
+    CONTROL_DIR = 0xFF;
+    DATA_DIR = 0XFF;
 
-    _delay_ms(40);		/* LCD Power ON delay always >15ms */
-	send_command(LCD_8BITMODE);	// Initialization in 8bit mode
-    send_command(LCD_CURSORON);
-    send_command(LCD_CLEARDISPLAY);
-    _delay_ms(2);
+	_delay_ms(200);
+    send_command(0x33);
+	_delay_ms(20);
+        send_command(0x32);
+	_delay_ms(20);
+    send_command(LCD_FUNCTIONSET | LCD_4BITMODE | LCD_2LINE | LCD_5x8DOTS);
+	_delay_ms(20);
+	send_command(LCD_DISPLAYCONTROL | LCD_DISPLAYON | LCD_BLINKOFF );
+	_delay_ms(20);
+	send_command(LCD_CLEARDISPLAY);
+	_delay_ms(20);
+
+
 }
 
-void lcd_string(char *string) {
-  for (char *it = string; *it; it++) {
-    send_8bit(*it);
-  }
+void lcd_string(char *str) {
+	int i;
+	for(i=0;str[i]!=0;i++)				/* Send each char of string till the NULL */
+	{
+		send_data(str[i]);
+	}
 }
 
+/*
 void init_i2c(uint8_t addr){
     TWAR = addr << 1 ;// Loadd address into TWAR
     TWCR = (1 << TWEA) | (1 << TWEN) | (1 << TWINT); // Setting up the Control register 
     sei();
 }
-
 
 ISR(TW_Vect){
     switch((TWSR & 0xF8)){
@@ -115,11 +122,21 @@ ISR(TW_Vect){
         
     }
 }
+*/
 
 int main(){
-    DDRB = 0xff;
-    PORTB |= (1 << PB0);
-    return 0;
+    init_lcd();
+    while(1){
+    lcd_string("I like Hello Shivani");
+    _delay_ms(1000);	
+       send_command(LCD_CLEARDISPLAY);
+    _delay_ms(1);			/* Go to 2nd line*/
+    send_command(0xC0);
+    lcd_string("Let ");
+    _delay_ms(1000);
+    send_command(LCD_CLEARDISPLAY);
+    _delay_ms(1);
+    }
 }
 
 

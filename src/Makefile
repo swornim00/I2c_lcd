@@ -1,6 +1,6 @@
 DEVICE     = atmega168
 CLOCK      = 16000000
-PROGRAMMER = -c stk500v1 -P /dev/tty.usbmodem14101 -b 19200
+PROGRAMMER = -c stk500v1 -P /dev/tty.usbmodem14201 -b 19200
 OBJECTS    = main.o
 FUSES      = -U hfuse:w:0xd9:m -U lfuse:w:0x24:m
 
