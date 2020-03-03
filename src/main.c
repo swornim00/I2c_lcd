@@ -1,8 +1,9 @@
 #include<avr/io.h>
 #define F_CPU 16000000UL      // Define CPU Frequency here it 16MHz 
-
 #include<util/delay.h>
 #include<avr/interrupt.h>
+#include <util/twi.h>
+
 
 #define LCD_RS PB0
 #define LCD_EN PB1
@@ -80,7 +81,7 @@ void init_lcd(){
 	_delay_ms(200);
     send_command(0x33);
 	_delay_ms(20);
-        send_command(0x32);
+    send_command(0x32);
 	_delay_ms(20);
     send_command(LCD_FUNCTIONSET | LCD_4BITMODE | LCD_2LINE | LCD_5x8DOTS);
 	_delay_ms(20);
@@ -100,43 +101,48 @@ void lcd_string(char *str) {
 	}
 }
 
-/*
 void init_i2c(uint8_t addr){
-    TWAR = addr << 1 ;// Loadd address into TWAR
-    TWCR = (1 << TWEA) | (1 << TWEN) | (1 << TWINT); // Setting up the Control register 
+    TWAR = addr << 1 ;// Load address into TWAR
+	TWCR = (1<<TWIE) | (1<<TWEA) | (1<<TWINT) | (1<<TWEN)|(0<<TWSTA)|(0<<TWSTO)|(0<<TWWC);
     sei();
-}
 
-ISR(TW_Vect){
-    switch((TWSR & 0xF8)){
-        case TW_SR_SLA_ACK: // Slave has been acknowledged
-
-            TWCR |= (1<<TWINT) | (1<<TWEN) | (1 << TWEA);
-
-        case TW_SR_DATA_ACK: // Data has been recieved by the slave
-            data = TWDR;
-            
-        case TW_ST_DATA_ACK: // Data has been requested
-
-        default:
-        
-    }
-}
-*/
-
-int main(){
-    init_lcd();
-    while(1){
-    lcd_string("I like Hello Shivani");
-    _delay_ms(1000);	
-       send_command(LCD_CLEARDISPLAY);
-    _delay_ms(1);			/* Go to 2nd line*/
-    send_command(0xC0);
-    lcd_string("Let ");
     _delay_ms(1000);
     send_command(LCD_CLEARDISPLAY);
     _delay_ms(1);
+    lcd_string("I2C Initialized");
+}
+
+
+ISR(TWI_vect){
+    send_command(LCD_CLEARDISPLAY);
+    _delay_ms(1);
+    lcd_string("Ack");
+    
+    uint8_t data;
+    switch((TWSR & 0xF8)){
+        case TW_SR_SLA_ACK: // Slave has been acknowledged
+        case TW_SR_DATA_ACK: // Data has been recieved by the slave
+            data = TWDR;
+            send_data(data);
+            TWCR |= (1<<TWINT) | (1<<TWEN) | (1 << TWEA);
+        default:
+          TWCR |= (1<<TWINT) | (1<<TWEN) | (1 << TWEA);
     }
+}
+
+int main(){
+    init_lcd();
+    init_i2c(0x47);
+    _delay_ms(2000);
+
+    send_command(LCD_CLEARDISPLAY);
+    _delay_ms(2);
+
+    lcd_string("Hello! People");
+    _delay_ms(2000);
+    send_command(0xC0);
+    lcd_string("I'm I2C LCD");
+    _delay_ms(2000);
 }
 
 

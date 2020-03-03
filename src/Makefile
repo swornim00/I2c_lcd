@@ -57,3 +57,6 @@ disasm:    main.elf
 
 cpp:
 	$(COMPILE) -E main.c%
+
+flash_arduino:
+	$(AVRDUDE) -U flash:w:main.hex:i
